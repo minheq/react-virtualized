@@ -24,6 +24,7 @@ app.use('*', (req, res) => {
       <div id="root">
         ${ReactDOMServer.renderToString(<Application req={req.originalUrl} />)}
       </div>
+      ${`<script src="static/client.js"></script>`}
     </body>
     </html>
   `)

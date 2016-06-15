@@ -8,11 +8,15 @@ export default function ComponentLink ({ activeComponent, component, setActiveCo
   })
 
   return (
-    <button
+    <a
       className={classNames}
-      onClick={() => setActiveComponent(component)}
+      onClick={(event) => {
+        event.preventDefault()
+        setActiveComponent(component)
+      }}
+      href={`/?component=${component}`}
     >
       {component}
-    </button>
+    </a>
   )
 }
