@@ -41,12 +41,16 @@ const COMPONENT_EXAMPLES_MAP = {
 // HACK Generate arbitrary data for use in example components :)
 const list = Immutable.List(generateRandomList())
 
-class Application extends Component {
+export default class Application extends Component {
   constructor (props) {
     super(props)
 
     // Support deep links to specific components
-    const matches = window.location.search.match('component=(.+)')
+    // Checks for server-rendered request
+    const matches = props.req
+      ? props.req.match('component=(.+)')
+      : window.location.search.match('component=(.+)')
+
     const activeComponent = matches && (COMPONENTS.includes(matches[1]) || HIGH_ORDER_COMPONENTS.includes(matches[1]))
       ? matches[1]
       : 'VirtualScroll'
@@ -139,11 +143,3 @@ class Application extends Component {
     return shallowCompare(this, nextProps, nextState)
   }
 }
-
-render(
-  <Application />,
-  document.getElementById('root')
-)
-
-// Import and attach the favicon
-document.querySelector('[rel="shortcut icon"]').href = require('file!./favicon.png')

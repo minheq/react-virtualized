@@ -6,11 +6,11 @@ const webpack = require('webpack')
 module.exports = {
   devtool: 'eval',
   entry: {
-    demo: './source/demo/Application'
+    demo: './source/demo/client'
   },
   output: {
     path: 'build',
-    filename: '/static/[name].js'
+    filename: 'static/[name].js'
   },
   plugins: [
     new HtmlWebpackPlugin({
