@@ -4,6 +4,12 @@ import ReactDOM from 'react-dom'
 import shallowCompare from 'react-addons-shallow-compare'
 import raf from 'raf'
 
+/**
+ * Specifies the number of miliseconds during which to disable pointer events while a scroll is in progress.
+ * This improves performance and makes scrolling smoother.
+ */
+const IS_SCROLLING_TIMEOUT = 150
+
 export default class WindowScroller extends Component {
   static propTypes = {
     /**
@@ -30,9 +36,11 @@ export default class WindowScroller extends Component {
 
     this.state = {
       scrollTop: 0,
-      height: 0
+      height: 0,
+      isScrolling: false,
     }
 
+    this._enablePointerEventsAfterDelayCallback = this._enablePointerEventsAfterDelayCallback.bind(this)
     this._onScrollWindow = this._onScrollWindow.bind(this)
     this._onResizeWindow = this._onResizeWindow.bind(this)
   }
@@ -69,10 +77,10 @@ export default class WindowScroller extends Component {
 
   render () {
     const { children } = this.props
-    const { scrollTop, height } = this.state
+    const { scrollTop, height, isScrolling } = this.state
 
     return (
-      <div>
+      <div style={{pointerEvents: isScrolling ? 'none' : 'auto'}}>
         {children({
           height,
           scrollTop
@@ -83,6 +91,28 @@ export default class WindowScroller extends Component {
 
   shouldComponentUpdate (nextProps, nextState) {
     return shallowCompare(this, nextProps, nextState)
+  }
+
+  _enablePointerEventsAfterDelay () {
+    if (this._disablePointerEventsTimeoutId) {
+      clearTimeout(this._disablePointerEventsTimeoutId)
+    }
+
+    this._disablePointerEventsTimeoutId = setTimeout(
+      this._enablePointerEventsAfterDelayCallback,
+      IS_SCROLLING_TIMEOUT
+    )
+  }
+
+  _enablePointerEventsAfterDelayCallback () {
+    this._disablePointerEventsTimeoutId = null
+
+    // Throw away cell cache once scrolling is complete
+    this._cellCache = {}
+
+    this.setState({
+      isScrolling: false
+    })
   }
 
   _onResizeWindow (event) {
@@ -96,7 +126,12 @@ export default class WindowScroller extends Component {
   }
 
   _onScrollWindow (event) {
+    // Prevent detectElementResize library from being triggered by this scroll event.
+    event.stopPropagation()
     const { onScroll } = this.props
+
+    // Prevent pointer events from interrupting a smooth scroll
+    this._enablePointerEventsAfterDelay()
 
     // In IE10+ scrollY is undefined, so we replace that with the latter
     const scrollY = ('scrollY' in window)
@@ -105,7 +140,13 @@ export default class WindowScroller extends Component {
 
     const scrollTop = Math.max(0, scrollY - this._positionFromTop)
 
-    this._setNextState({ scrollTop })
+    if (!this.state.isScrolling) {
+      this.setState({
+        isScrolling: true
+      })
+    }
+
+    this._setNextState({ scrollTop, isScrolling: true })
 
     onScroll({ scrollTop })
   }
